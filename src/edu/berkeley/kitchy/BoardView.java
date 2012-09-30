@@ -157,6 +157,7 @@ public class BoardView extends SurfaceView implements Runnable, OnTouchListener,
 				Canvas canvas = holder.lockCanvas();
 				drawBoard(canvas);
 				holder.unlockCanvasAndPost(canvas);
+				//numCuts.setText("Number of cuts: " + board != null ? board.getCuts().size() : 0);
 //			}
 //			catch (Exception e) {
 //				Log.d("?", "EXCEPTED" + e.toString());
@@ -213,6 +214,8 @@ public class BoardView extends SurfaceView implements Runnable, OnTouchListener,
 		paint.setStyle(Style.STROKE);
 		paint.setStrokeWidth(5);
 		paint.setDither(true);
+		
+		
 
 		canvas.drawRGB(255, 255, 255);
 		scaleImage(carrotBoard, canvas);
@@ -220,6 +223,12 @@ public class BoardView extends SurfaceView implements Runnable, OnTouchListener,
 		for (int[] cut : cuts) {
 			canvas.drawLine(cut[0], cut[1], cut[2], cut[3], paint);
 		}
+		
+		paint.setColor(Color.BLACK);
+		paint.setStyle(Style.FILL_AND_STROKE);
+		paint.setStrokeWidth(1);
+		paint.setTextSize(30);
+		canvas.drawText("Number of cuts: " + board.getCuts().size(), 100, 400, paint);
 	}
 	
 	private void scaleImage(Bitmap bitmap, Canvas canvas)
@@ -231,7 +240,10 @@ public class BoardView extends SurfaceView implements Runnable, OnTouchListener,
 	
 	public int[] generateRandomCut()
 	{
-		int x1 = (int) (100 * scaleFactor) + board.getCuts().size() * 10 + (int)(Math.random() * 10 - 5);
+		if (board.getCuts().size() >= 50)
+			board.resetCuts();
+		
+		int x1 = (int) (120 * scaleFactor) + board.getCuts().size() * 10 + (int)(Math.random() * 10 - 5);
 		int y1 = (int) (100 * scaleFactor);
 		int x2 = x1 + (int)(Math.random() * 10 - 5);
 		int y2 = (int) (350 * scaleFactor);
