@@ -2,10 +2,8 @@ package edu.berkeley.kitchy;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Random;
 import java.util.Vector;
 
-import android.R.integer;
 import android.content.Context;
 import android.content.res.AssetManager;
 import android.graphics.Bitmap;
@@ -15,6 +13,9 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.Rect;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
@@ -23,8 +24,18 @@ import android.view.SurfaceHolder.Callback;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.View.OnTouchListener;
+import android.widget.TextView;
 
-public class BoardView extends SurfaceView implements Runnable, OnTouchListener {
+public class BoardView extends SurfaceView implements Runnable, OnTouchListener, SensorEventListener {
+	
+	TextView textView;
+	StringBuilder builder = new StringBuilder();
+	DataStorage xAxis = new DataStorage();//stores acceleration, velocity, and position data along the x-axis
+	DataStorage yAxis = new DataStorage();//stores acceleration, velocity, and position data along the y-axis
+	DataStorage zAxis = new DataStorage();//stores acceleration, velocity, and position data along the z-axis
+	
+	private CutDeterminer c = new CutDeterminer();
+	
 
 	private Thread renderThread = null;
 	private SurfaceHolder holder;
@@ -77,6 +88,57 @@ public class BoardView extends SurfaceView implements Runnable, OnTouchListener 
 					int width, int height) {
 			}
 		});
+		
+		resume();
+
+	}
+	
+	@Override
+	public void onSensorChanged(SensorEvent event) {
+		if(!AccelerometerTest.isAccelerationGravity(event.values[0], event.values[1], event.values[2]))
+		{
+			double timeSeconds = event.timestamp / (Math.pow(10.0, 9));
+			if(c.isSlice(event.values[0]))
+				board.addCut(generateRandomCut());
+			xAxis.addDataValue(event.values[0], timeSeconds);//adds new data values
+			yAxis.addDataValue(event.values[1], timeSeconds);
+			zAxis.addDataValue(event.values[2], timeSeconds);
+			builder.setLength(0);
+			builder.append("x-a: ");//appends acceleration values
+			builder.append(event.values[0]);
+			builder.append(", y-a: ");
+			builder.append(event.values[1]);
+			builder.append(", z-a: ");
+			builder.append(event.values[2]);
+			builder.append(", mag-a: ");
+			builder.append(AccelerometerTest.magnitudeAcceleration(event.values[0], event.values[1], event.values[2]));
+			builder.append(", x-p: ");//appends position values
+			builder.append(xAxis.currentPosition());
+			builder.append(", y-p: ");
+			builder.append(yAxis.currentPosition());
+			builder.append(", z-p: ");
+			builder.append(zAxis.currentPosition());
+			builder.append(", #Cuts:");
+			builder.append(c.numCuts());
+//			Log.d("accel", builder.toString());
+			c.resetConsecutiveGravityAccelerations();
+		}
+		else
+		{
+			c.incrementConsecutiveGravityAccelerations();
+			if(c.numConsecutiveGravityAccelerations() > 4)//if phone has faced same direction long enough
+			{
+				if(event.values[0] > 0)
+				{
+					c.setDirection(true);//sets direction of the phone if gravity is positive
+				}
+				else
+				{
+					c.setDirection(false);//sets direction of the phone to down if gravity is negative
+				}
+				c.resetConsecutiveGravityAccelerations();
+			}
+		}
 	}
 
 	public void resume() {
@@ -125,7 +187,7 @@ public class BoardView extends SurfaceView implements Runnable, OnTouchListener 
 	public boolean onTouch(View v, MotionEvent event) {
 		switch (event.getAction()) {
 		case MotionEvent.ACTION_DOWN:
-			resume();
+//			resume();
 			x1 = (int) event.getX();
 			y1 = (int) event.getY();
 			x2 = x1;
@@ -137,9 +199,9 @@ public class BoardView extends SurfaceView implements Runnable, OnTouchListener 
 			break;
 		case MotionEvent.ACTION_CANCEL:
 		case MotionEvent.ACTION_UP:
-			//board.addCut(x1, y1, x2, y2);
-			board.addCut(generateRandomCut());
-			pause();
+			board.addCut(x1, y1, x2, y2);
+			//board.addCut(generateRandomCut());
+			//pause();
 			break;
 		}
 		return true;
@@ -172,9 +234,16 @@ public class BoardView extends SurfaceView implements Runnable, OnTouchListener 
 		int x1 = (int) (100 * scaleFactor) + board.getCuts().size() * 10 + (int)(Math.random() * 10 - 5);
 		int y1 = (int) (100 * scaleFactor);
 		int x2 = x1 + (int)(Math.random() * 10 - 5);
-		int y2 = (int) (600 * scaleFactor);
+		int y2 = (int) (350 * scaleFactor);
+		Log.d("tag", "" + scaleFactor);
 		int[] result = {x1, y1, x2, y2};
 		return result;
+	}
+
+	@Override
+	public void onAccuracyChanged(Sensor sensor, int accuracy) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

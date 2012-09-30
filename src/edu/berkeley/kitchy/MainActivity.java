@@ -1,12 +1,13 @@
 package edu.berkeley.kitchy;
 
-import android.os.Bundle;
 import android.app.Activity;
+import android.content.Context;
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
+import android.os.Bundle;
 import android.view.Menu;
-import android.view.MenuItem;
 import android.view.Window;
 import android.view.WindowManager;
-import android.support.v4.app.NavUtils;
 
 public class MainActivity extends Activity {
 
@@ -17,6 +18,19 @@ public class MainActivity extends Activity {
 				WindowManager.LayoutParams.FLAG_FULLSCREEN);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.board);
+        
+        BoardView boardView = (BoardView) findViewById(R.id.boardView);
+        
+		//Adds the sensorlistener
+		SensorManager manager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
+		if (manager.getSensorList(Sensor.TYPE_ACCELEROMETER).size() == 0) {
+		} else {
+			Sensor accelerometer = manager.getSensorList(
+					Sensor.TYPE_ACCELEROMETER).get(0);
+			if (!manager.registerListener(boardView, accelerometer,
+					SensorManager.SENSOR_DELAY_GAME)) {
+			}
+		}
     }
 
     @Override

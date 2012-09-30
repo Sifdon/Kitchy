@@ -23,7 +23,7 @@ public class CutDeterminer
 	 * 
 	 * @return
 	 */
-	public void isSlice(double acceleration)
+	public boolean isSlice(double acceleration)
 	{
 		if(currentDirection == isJustGravity(acceleration))
 		{
@@ -39,7 +39,7 @@ public class CutDeterminer
 			cuts++;
 			consecutiveNonGravityAccelerations = 0;
 			currentDirection = isJustGravity(acceleration);
-			return;
+			return true;
 		}
 		
 		if(isJustGravity(acceleration) == JUST_GRAVITY)//acceleration is just due to gravity
@@ -71,6 +71,7 @@ public class CutDeterminer
 			}
 			currentDirection = DOWN;//changes direction to down
 		}
+		return false;
 	}
 	
 	/**
